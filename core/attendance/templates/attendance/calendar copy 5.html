@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Leave Calendar - {{ month_name }} {{ year }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== VARIABLES ===== */
+    :root {
+        --primary: #2196F3;
+        --success: #4CAF50;
+        --warning: #FF9800;
+        --danger: #F44336;
+        --light: #f5f5f5;
+        --dark: #333;
+        --border: #ddd;
+        --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .calendar-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: var(--shadow-lg);
+        padding: 30px;
+        margin: 20px 0;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+        border-bottom: 3px solid var(--primary);
+        padding-bottom: 20px;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        color: var(--dark);
+        margin: 0 0 10px 0;
+        font-weight: 600;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+    }
+
+    .calendar-controls {
+        display: flex;
+        gap: 15px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        padding: 20px;
+        background: var(--light);
+        border-radius: 8px;
+    }
+
+    .control-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .control-label {
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 14px;
+    }
+
+    select {
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .calendar-nav {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .nav-btn {
+        padding: 10px 20px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .nav-btn:hover {
+        background: #1976D2;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .nav-month {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--dark);
+        min-width: 180px;
+        text-align: center;
+    }
+
+    .calendar-legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: var(--light);
+        border-radius: 8px;
+    }
+
+    .legend-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px;
+        border-radius: 6px;
+        background: white;
+        border: 1px solid var(--border);
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    .legend-text {
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .day-card {
+        background: white;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        min-height: 150px;
+        transition: all 0.3s ease;
+    }
+
+    .day-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+    }
+
+    .day-card.has-holiday {
+        background: linear-gradient(135deg, #FFE0B2 0%, #FFF3E0 100%);
+        border-color: #FF9800;
+    }
+
+    .day-card.has-leaves {
+        background: linear-gradient(135deg, #E3F2FD 0%, #F5F5F5 100%);
+    }
+
+    .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .day-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    .day-weekday {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #666;
+        background: var(--light);
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    .day-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: #999;
+        margin-top: 2px;
+    }
+
+    .leave-person {
+        display: block;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .leave-person-name {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .leave-type {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .leave-duration {
+        display: inline-block;
+        font-size: 8px;
+        margin-left: 4px;
+        opacity: 0.7;
+    }
+
+    .leave-casual-leave { background: #E3F2FD; color: #1565C0; }
+    .leave-sick-leave { background: #FFEBEE; color: #C62828; }
+    .leave-earned-leave { background: #E8F5E9; color: #2E7D32; }
+    .leave-maternity-leave { background: #FCE4EC; color: #C2185B; }
+    .leave-work-from-home { background: #E0F2F1; color: #00695C; }
+    .leave-other-leave { background: #F5F5F5; color: #424242; }
+
+    .no-leaves {
+        text-align: center;
+        padding: 15px;
+        color: #999;
+        font-size: 12px;
+    }
+
+    .holiday-badge {
+        background: linear-gradient(135deg, #FF9800 0%, #FFC107 100%);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .calendar-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 768px) {
+        .calendar-container { padding: 15px; }
+        .calendar-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+        .day-card { padding: 10px; min-height: 130px; }
+        .day-number { font-size: 16px; }
+        .leave-person { font-size: 9px; padding: 4px 5px; }
+    }
+
+    @media print {
+        .calendar-controls, .calendar-nav { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="calendar-container">
+    
+    <div class="page-header">
+        <h1>📅 Leave Calendar</h1>
+        <p class="page-subtitle">Who is on leave each day - {{ month_name }} {{ year }}</p>
+    </div>
+
+    <div class="calendar-controls">
+        <div class="control-group">
+            <label class="control-label">🔍 Filter by Team:</label>
+            <form method="GET" style="display: flex; gap: 10px;">
+                <select name="team" onchange="this.form.submit()">
+                    <option value="all" {% if team_filter == 'all' %}selected{% endif %}>All Teams</option>
+                    {% for team in teams_list %}
+                    <option value="{{ team.id }}" {% if team_filter == team.id %}selected{% endif %}>{{ team.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="calendar-legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #E3F2FD;"></div>
+            <span class="legend-text">Casual Leave</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFEBEE;"></div>
+            <span class="legend-text">Sick Leave</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #E8F5E9;"></div>
+            <span class="legend-text">Earned Leave</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FCE4EC;"></div>
+            <span class="legend-text">Maternity Leave</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #E0F2F1;"></div>
+            <span class="legend-text">Work From Home</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFF3E0;"></div>
+            <span class="legend-text">Half-Day</span>
+        </div>
+    </div>
+
+    <div class="calendar-nav">
+        <a href="?month={{ prev_month }}&year={{ prev_year }}&team={{ team_filter }}" class="nav-btn">← Previous</a>
+        <div class="nav-month">{{ month_name }} {{ year }}</div>
+        <a href="?month={{ next_month }}&year={{ next_year }}&team={{ team_filter }}" class="nav-btn">Next →</a>
+    </div>
+
+    <div class="calendar-stats">
+        <div class="stat-box">
+            <div class="stat-value">📅</div>
+            <div class="stat-label">Days in Month</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ today_on_leave }}</div>
+            <div class="stat-label">On Leave Today</div>
+        </div>
+    </div>
+
+    <div class="calendar-grid">
+        {% for day in calendar_days %}
+        <div class="day-card {% if day in holidays_dict %}has-holiday{% endif %} {% if leaves_by_date|get_item:day %}has-leaves{% endif %}">
+            
+            <div class="day-header">
+                <div>
+                    <div class="day-number">{{ day }}</div>
+                    <div class="day-label">
+                        {% if forloop.counter|add:0|divisibleby:7 %}Sun
+                        {% elif forloop.counter|add:1|divisibleby:7 %}Mon
+                        {% elif forloop.counter|add:2|divisibleby:7 %}Tue
+                        {% elif forloop.counter|add:3|divisibleby:7 %}Wed
+                        {% elif forloop.counter|add:4|divisibleby:7 %}Thu
+                        {% elif forloop.counter|add:5|divisibleby:7 %}Fri
+                        {% else %}Sat
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if day in holidays_dict %}
+            <div class="holiday-badge">🏖️ {{ holidays_dict|get_item:day }}</div>
+            {% endif %}
+
+            {% with leaves=leaves_by_date|get_item:day %}
+                {% if leaves %}
+                    {% for person in leaves %}
+                    <div class="leave-person leave-{{ person.type_class }}">
+                        <span class="leave-person-name">👤 {{ person.user.first_name|slice:":1" }}{{ person.user.last_name }}</span>
+                        <span class="leave-type">
+                            {% if person.type_class == 'casual-leave' %}CL
+                            {% elif person.type_class == 'sick-leave' %}SL
+                            {% elif person.type_class == 'earned-leave' %}EL
+                            {% elif person.type_class == 'maternity-leave' %}ML
+                            {% elif person.type_class == 'work-from-home' %}WFH
+                            {% else %}{{ person.type_class|slice:":2"|upper }}
+                            {% endif %}
+                        </span>
+                        {% if person.duration != 'full' %}
+                        <span class="leave-duration">
+                            {% if person.duration == 'first_half' %}🌅 {% elif person.duration == 'second_half' %}🌆{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-leaves">✅ No leaves</div>
+                {% endif %}
+            {% endwith %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd;">
+        <p>Generated on {{ now|date:"d M Y H:i" }} | 🌅 Morning | 🌆 Afternoon</p>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,644 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Leave Calendar - {{ month_name }} {{ year }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Leave Calendar Container */
+    .leave-calendar-container {
+        padding: 20px;
+        background-color: #f5f5f5;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-section select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    /* Month Navigation */
+    .month-nav {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .month-nav a, .current-month {
+        padding: 8px 12px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .month-nav a:hover {
+        background-color: #0056b3;
+    }
+
+    .current-month {
+        background-color: #6c757d;
+        font-weight: bold;
+    }
+
+    /* Department Group */
+    .department-group {
+        background-color: white;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .department-header {
+        background-color: #343a40;
+        color: white;
+        padding: 15px 20px;
+        margin: 0;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    /* Calendar Table */
+    .calendar-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+    .calendar-table thead th {
+        background-color: #e9ecef;
+        padding: 10px 5px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: bold;
+        border: 1px solid #ddd;
+        width: 40px;
+    }
+
+    .calendar-table thead th.user-header {
+        background-color: #495057;
+        color: white;
+        width: auto;
+        text-align: left;
+        padding: 10px 15px;
+    }
+
+    .calendar-table thead th.weekend {
+        background-color: #f0f0f0;
+    }
+
+    .calendar-table thead th.holiday {
+        background-color: #ffe6e6;
+        color: #c00;
+        font-weight: bold;
+    }
+
+    .calendar-table tbody td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        height: 40px;   
+        vertical-align: middle;
+    }
+
+    .calendar-table tbody td.user-name {
+        background-color: #f9f9f9;
+        color: rgb(79, 78, 78);
+        font-weight: bold;
+        text-align: left;
+        padding: 12px 15px;
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        min-width: 200px;
+        max-width: 250px;
+        word-wrap: break-word;
+    }
+
+    .calendar-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    /* Leave Cell Styling */
+    .leave-cell {
+        font-size: 11px;
+        font-weight: bold;
+        color: white;
+        border-radius: 4px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .leave-cell.empty {
+        background-color: transparent;
+    }
+
+    .leave-cell.empty.weekend {
+        background-color: #f0f0f0;
+    }
+
+    .leave-cell.holiday {
+        background-color: #E74C3C;
+        border: 2px solid #c0392b;
+    }
+
+    /* Leave Types */
+    .leave-cell.sick-leave {
+        background-color: #FFA500;
+    }
+
+    .leave-cell.casual-leave {
+        background-color: #3498DB;
+    }
+
+    .leave-cell.earned-leave {
+        background-color: #9B59B6;
+    }
+
+    .leave-cell.maternity-leave {
+        background-color: #E91E63;
+    }
+
+    .leave-cell.work-from-home {
+        background-color: #6BCB77;
+    }
+
+    .leave-cell.other-leave {
+        background-color: #95A5A6;
+    }
+
+    /* Leave Badge (Text) */
+    .leave-badge {
+        flex: 1;
+        padding: 2px 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Cancel Button - IMPORTANT STYLES */
+    .cancel-leave-btn {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        color: white !important;
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 50% !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.2s ease !important;
+        opacity: 0 !important;
+        margin-left: 4px !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+    }
+
+    /* Show cancel button on hover */
+    .leave-cell:hover .cancel-leave-btn {
+        opacity: 1 !important;
+    }
+
+    /* Cancel button hover effect */
+    .cancel-leave-btn:hover {
+        background: rgba(255, 0, 0, 0.8) !important;
+        border-color: rgba(255, 0, 0, 1) !important;
+        transform: rotate(90deg) !important;
+    }
+
+    /* Cancel button active effect */
+    .cancel-leave-btn:active {
+        transform: scale(0.9) rotate(90deg) !important;
+    }
+
+    /* Leave Cell Hover Effect */
+    .leave-cell:not(.empty):not(.holiday):hover {
+        opacity: 0.9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transform: scale(1.02);
+    }
+
+    /* Legend */
+    .legend {
+        background-color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+
+    /* No Users Message */
+    .no-users {
+        background-color: white;
+        padding: 30px;
+        text-align: center;
+        color: #666;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+
+    .leave-box {
+        position: relative;
+        background-color: var(--leave-color);
+        padding: 4px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: bold;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 30px;
+        cursor: pointer;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .filter-section {
+            flex-direction: column;
+        }
+
+        .month-nav {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .calendar-table {
+            font-size: 12px;
+        }
+
+        .leave-cell {
+            padding: 4px !important;
+        }
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="leave-calendar-container">
+    <!-- Department Filter -->
+    <div class="filter-section">
+        <label for="dept-filter">📂 Filter by Department:</label>
+        <form method="get" style="display: flex; gap: 10px; align-items: center;">
+            <select name="department" id="dept-filter" onchange="this.form.submit()">
+                <option value="all" {% if selected_department == 'all' %}selected{% endif %}>All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if selected_department|stringformat:"s" == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <!-- Month Navigation -->
+            <div class="month-nav">
+                {% if month > 1 %}
+                    <a href="?month={{ month|add:'-1' }}&year={{ year }}&department={{ selected_department }}">← Previous</a>
+                {% else %}
+                    <a href="?month=12&year={{ year|add:'-1' }}&department={{ selected_department }}">← Previous</a>
+                {% endif %}
+                
+                <span class="current-month">{{ month_name }} {{ year }}</span>
+                
+                {% if month < 12 %}
+                    <a href="?month={{ month|add:'1' }}&year={{ year }}&department={{ selected_department }}">Next →</a>
+                {% else %}
+                    <a href="?month=1&year={{ year|add:'1' }}&department={{ selected_department }}">Next →</a>
+                {% endif %}
+                
+                <a href="?">Today</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Department Groups -->
+    {% if department_groups %}
+        {% for dept_name, users_in_dept in department_groups.items %}
+            <div class="department-group">
+                <!-- Department Header with user count -->
+                <h3 class="department-header">{{ dept_name }} ({{ users_in_dept|length }} users)</h3>
+
+                <!-- Calendar Table -->
+                <table class="calendar-table">
+                    <!-- Header: Date numbers with weekend and holiday highlighting -->
+                    <thead>
+                        <tr>
+                            <th class="user-header">User Name</th>
+                            {% for day in calendar_days %}
+                                {% get_date_weekday day year month as weekday %}
+                                {% with is_holiday=holidays_dict|get_item:day %}
+                                    <th class="{% if is_holiday %}holiday{% elif weekday >= 5 %}weekend{% endif %}" title="{% if is_holiday %}{{ is_holiday }}{% endif %}">{{ day }}</th>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+                    </thead>
+
+                    <!-- Body: Users and their leave -->
+                    <tbody>
+                        {% for user_row in users_in_dept %}
+                            <tr>
+                                <!-- User Name -->
+                                <td class="user-name">
+                                    <strong>{{ user_row.user.get_full_name|default:user_row.user.username }}</strong>
+                                </td>
+
+                                <!-- Leave cells for each day -->
+                                {% for day in calendar_days %}
+                                    {% get_date_weekday day year month as weekday %}
+                                    {% with leave=user_row.leaves_by_date|get_item:day is_holiday=holidays_dict|get_item:day %}
+                                        {% if is_holiday %}
+                                            <!-- Holiday cell (takes priority) -->
+                                            <td class="leave-cell holiday" data-holiday="{{ is_holiday }}" title="{{ is_holiday }}"></td>
+                                        {% elif leave %}
+                                            <!-- Leave cell WITH CANCEL BUTTON -->
+                                             
+                                            <td class="leave-cell {{ leave.type_class }}" 
+                                                data-leave-id="{{ leave.id }}"
+                                                data-leave-type="{% if leave.type == 'Sick Leave' %}SL{% elif leave.type == 'Casual Leave' %}CL{% elif leave.type == 'Earned Leave' %}EL{% elif leave.type == 'Maternity Leave' %}ML{% elif leave.type == 'Work From Home' %}WFH{% else %}OL{% endif %}"
+                                                class="leave-box" style="--leave-color: {{ leave.color|default:'#6c757d' }};">
+                                                
+                                                <!-- Leave display with INITIALS ONLY -->
+                                                <span class="leave-badge" style="flex: 1; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">
+                                                    {% if leave.type == 'Sick Leave' %}SL
+                                                    {% elif leave.type == 'Casual Leave' %}CL
+                                                    {% elif leave.type == 'Earned Leave' %}EL
+                                                    {% elif leave.type == 'Maternity Leave' %}ML
+                                                    {% elif leave.type == 'Work From Home' %}WFH
+                                                    {% else %}OL
+                                                    {% endif %}
+                                                </span>
+                                                
+                                                <!-- HOVER CANCEL BUTTON -->
+                                                
+                                                <button class="cancel-leave-btn"
+                                                        type="button"
+                                                        data-leave-id="{{ leave.id }}"
+                                                        onclick="cancelLeaveFunction(event, this)"
+                                                        title="Click to cancel this leave"
+                                                        style="background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.5); color: white; width: 20px; height: 20px; border-radius: 50%; padding: 0; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; opacity: 0; margin-left: 4px; flex-shrink: 0;">
+                                                    ✕
+                                                </button>
+                                              
+                                            </td>
+                                        {% else %}
+                                            <!-- Empty cell -->
+                                            <td class="leave-cell empty {% if weekday >= 5 %}weekend{% endif %}"></td>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-users">
+            No users found for the selected department.
+        </div>
+    {% endif %}
+
+    <!-- Legend -->
+<div class="legend">
+    <strong>📋 Legend:</strong>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #FFA500;"></div>
+        <span>Sick Leave</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #3498DB;"></div>
+        <span>Casual Leave</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #9B59B6;"></div>
+        <span>Earned Leave</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #E91E63;"></div>
+        <span>Maternity Leave</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #6BCB77;"></div>
+        <span>Work From Home</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #95A5A6;"></div>
+        <span>Other</span>
+    </div>
+    <div style="width: 1px; height: 20px; background: #ddd; margin: 0 10px;"></div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #E74C3C;"></div>
+        <span>Holiday</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background-color: #f0f0f0; border: 1px solid #ccc;"></div>
+        <span>Weekend</span>
+    </div>
+</div>
+
+</div>
+
+<script>
+    // Main cancel function - FIXED VERSION
+    function cancelLeaveFunction(event, button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Get leave ID from the button's data attribute
+        const leaveId = button.getAttribute('data-leave-id');
+        
+        console.log('Cancel button clicked for leave ID:', leaveId);
+        
+        // Confirmation dialog
+        if (!confirm('Are you sure you want to cancel this leave? Days will be returned to your available balance.')) {
+            return;
+        }
+        
+        // Show loading state
+        button.disabled = true;
+        button.style.opacity = '0.5';
+        
+        // Send AJAX request
+        fetch('{% url "cancel_leave" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                leave_id: parseInt(leaveId)
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                // Show success message
+                showNotification('✓ ' + data.message, 'success');
+                
+                // Remove the leave cell from display
+                const leaveCell = button.closest('td');
+                if (leaveCell) {
+                    leaveCell.style.transition = 'all 0.3s ease';
+                    leaveCell.style.opacity = '0.5';
+                    
+                    // Reload page after animation
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    // Fallback: reload page anyway
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            } else {
+                // Show error message
+                showNotification('✗ ' + data.message, 'error');
+                button.disabled = false;
+                button.style.opacity = '1';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred: ' + error.message, 'error');
+            button.disabled = false;
+            button.style.opacity = '1';
+        });
+    }
+    
+    // Notification function
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            z-index: 9999;
+            font-weight: bold;
+            color: white;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        `;
+        
+        if (type === 'success') {
+            notification.style.backgroundColor = '#4CAF50';
+            notification.style.color = 'white';
+        } else {
+            notification.style.backgroundColor = '#f44336';
+            notification.style.color = 'white';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 4000);
+    }
+    
+    // Animation styles
+    if (!document.getElementById('cancel-leave-animations')) {
+        const style = document.createElement('style');
+        style.id = 'cancel-leave-animations';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Debug: Log all cancel buttons found
+    console.log('Cancel buttons found:', document.querySelectorAll('.cancel-leave-btn').length);
+</script>
+
+{% endblock %}

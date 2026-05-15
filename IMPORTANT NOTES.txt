@@ -1,0 +1,38 @@
+PS C:\Users\DivyangDatania\attendance_app> venv\Scripts\activate
+cd "C:\Users\DivyangDatania\attendance_app\core"
+
+python manage.py runserver
+
+http://127.0.0.1:8000/
+
+http://localhost:8000/attendance/schedule/
+http://127.0.0.1:8000/attendance/schedule/
+
+http://127.0.0.1:8000/admin/
+http://127.0.0.1:8000/calendar/ 
+http://127.0.0.1:8000/login/
+http://127.0.0.1:8000/leave/request/
+http://127.0.0.1:8000/leave/request_leave/
+
+Divyang@123
+Divyang
+all user password = Password@123
+
+python manage.py makemigrations
+python manage.py migrate
+
+python manage.py createsuperuser
+
+divyang.datania@thenewsmarket.com
+Microsoft - outlook - App Password name = Django Leave
+lcvpqkhfctpkmkcc
+
+Password: lcvpqkhfctpkmkcc
+Password name:Django Leave
+
+TO CREATE APP PASSWORD 
+Open this link (log in with your Outlook email):
+👉 https://mysignins.microsoft.com/security-info
+
+TO install anything in venv use this 
+python -m pip install 

@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Dashboard</h1>
+  <p class="page-subtitle">Welcome back! Here's your leave overview</p>
+</div>
+
+<div class="dashboard-grid">
+  <!-- Leaves Summary Cards -->
+  <div class="card-container">
+    <!-- Total Leaves Card -->
+    <div class="stat-card primary-card">
+      <div class="stat-card-header">
+        <i class="fas fa-calendar-check"></i>
+        <span class="stat-label">Total Leaves</span>
+      </div>
+      <div class="stat-value">{{ total_leaves }}</div>
+      <div class="stat-footer">Annual allocation</div>
+    </div>
+
+    <!-- Used Leaves Card (Now accounts for half days) -->
+    <div class="stat-card success-card">
+      <div class="stat-card-header">
+        <i class="fas fa-check-circle"></i>
+        <span class="stat-label">Used</span>
+      </div>
+      <div class="stat-value">{{ used_leaves|floatformat:1 }}</div>
+      <div class="stat-footer">Days consumed (includes 0.5 for half days)</div>
+    </div>
+
+    <!-- Remaining Leaves Card (Now correctly calculated) -->
+    <div class="stat-card warning-card">
+      <div class="stat-card-header">
+        <i class="fas fa-hourglass-half"></i>
+        <span class="stat-label">Remaining</span>
+      </div>
+      <div class="stat-value">{{ remaining_leaves|floatformat:1 }}</div>
+      <div class="stat-footer">Days available</div>
+    </div>
+
+    <!-- Pending Leaves Card (NEW) -->
+    <div class="stat-card info-card">
+      <div class="stat-card-header">
+        <i class="fas fa-clock"></i>
+        <span class="stat-label">Pending</span>
+      </div>
+      <div class="stat-value">{{ pending_leaves }}</div>
+      <div class="stat-footer">Awaiting approval</div>
+    </div>
+
+    <!-- Team Card -->
+    <div class="stat-card info-card">
+      <div class="stat-card-header">
+        <i class="fas fa-users"></i>
+        <span class="stat-label">Team</span>
+      </div>
+      <div class="stat-value" style="font-size: 1.5rem;">{{ profile.team }}</div>
+      <div class="stat-footer">Role: {{ profile.role }}</div>
+    </div>
+  </div>
+
+  <!-- Leave Balance Progress -->
+  <div class="progress-section">
+    <div class="section-title">Leave Balance Progress</div>
+    <div class="progress-bar-container">
+      <div class="progress-label">
+        <span>Usage Rate</span>
+        <span class="progress-percentage">
+          {% if total_leaves > 0 %}
+            {% widthratio used_leaves total_leaves 100 %}%
+          {% else %}
+            0%
+          {% endif %}
+        </span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" 
+             style="width: {% if total_leaves > 0 %}{% widthratio used_leaves total_leaves 100 %}{% else %}0{% endif %}%;"></div>
+      </div>
+      <div class="progress-info">
+        <small>{{ used_leaves|floatformat:1 }} of {{ total_leaves }} days used</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming Leaves Section -->
+  <div class="upcoming-leaves-section">
+    <div class="section-title">
+      <i class="fas fa-list"></i> Upcoming Leaves
+    </div>
+    
+    {% if upcoming_leaves %}
+      <div class="leaves-table">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Duration</th>
+              <th>Type</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for leave in upcoming_leaves %}
+            <tr>
+              <td>{{ leave.start_date|date:"M d, Y" }}</td>
+              <td>{{ leave.end_date|date:"M d, Y" }}</td>
+              <td>
+                <span class="badge-duration">
+                  {{ leave.get_duration_display }}
+                </span>
+              </td>
+              <td>{{ leave.get_leave_type_display }}</td>
+              <td>
+                <span class="badge badge-{{ leave.status }}">
+                  {{ leave.get_status_display }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No upcoming leaves scheduled</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Pending Requests Section (NEW) -->
+  {% if pending_leaves > 0 %}
+  <div class="pending-leaves-section">
+    <div class="section-title">
+      <i class="fas fa-exclamation-circle"></i> Pending Requests
+    </div>
+    <div class="alert alert-info">
+      <strong>{{ pending_leaves }} leave request(s)</strong> are waiting for manager approval.
+      <a href="{% url 'calendar' %}">View Requests</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+    .badge-duration {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .badge-approved {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .badge-pending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+
+  .badge-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .leaves-table {
+    overflow-x: auto;
+  }
+
+  .leaves-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .leaves-table th,
+  .leaves-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .leaves-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .leaves-table tr:hover {
+    background-color: #fafafa;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+  }
+
+  .progress-info {
+    margin-top: 8px;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .alert-info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-left: 4px solid #1976d2;
+  }
+
+  .alert a {
+    color: #1976d2;
+    text-decoration: underline;
+    margin-left: 8px;
+  }
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .page-subtitle {
+    color: var(--text-light);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary);
+  }
+
+  .stat-card.success-card::before {
+    background: var(--success);
+  }
+
+  .stat-card.warning-card::before {
+    background: var(--warning);
+  }
+
+  .stat-card.info-card::before {
+    background: var(--info);
+  }
+
+  .stat-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+  }
+
+  .stat-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
+  .stat-card-header i {
+    font-size: 1.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: var(--primary);
+  }
+
+  .stat-card.success-card .stat-card-header i {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+  }
+
+  .stat-card.warning-card .stat-card-header i {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+  }
+
+  .stat-card.info-card .stat-card-header i {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+  }
+
+  .stat-label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+  }
+
+  .stat-footer {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+
+  .progress-section {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .progress-fill {
+  width: attr(data-width percentage);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  height: 100%;}
+  
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .progress-bar-container {
+    margin-bottom: 2rem;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    font-weight: 500;
+  }
+
+  .progress-percentage {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width var(--transition-normal);
+    border-radius: 10px;
+  }
+
+  .quick-actions {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: var(--hover-bg);
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background: var(--border-color);
+    border-color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .card-container {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .action-buttons .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,314 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Attendance System</title>
+<!-- Favicon - Add your company logo here 
+<img src="{% static 'images/TNM.png' %}" alt="Company Logo" class="logo-image">-->
+<link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(120deg, #2c3e50, #3498db);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Company Logo Section */
+.logo-section {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.company-logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 15px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: white;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.company-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 5px;
+}
+
+.company-tagline {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #2c3e50;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #34495e;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 0;
+  border-radius: 6px;
+  border: 1px solid #bdc3c7;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+input::placeholder {
+  color: #95a5a6;
+}
+
+/* Password Reset Link */
+.password-reset-section {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.reset-link {
+  font-size: 13px;
+  color: #3498db;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.reset-link:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+/* Login Button */
+button {
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.35);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fadbd8;
+  color: #c0392b;
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid #c0392b;
+  display: none;
+}
+
+.error-message.show {
+  display: block;
+}
+
+/* Success Message */
+.success-message {
+  background-color: #d5f4e6;
+  color: #27ae60;
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid #27ae60;
+  display: none;
+}
+
+.success-message.show {
+  display: block;
+}
+
+/* Footer Links */
+.login-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.footer-text {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+.logo-image {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 15px;
+  border-radius: 12px;
+}
+
+.company-name {
+    font-size: 28px;
+    font-weight: 600;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.news {
+    color: #ff0000; /* red from News logo */
+    font-weight: 700;
+}
+
+.epresspack {
+    color: #1e73be; /* blue from epresspack logo */
+    font-weight: 700;
+}
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .company-logo {
+    width: 70px;
+    height: 70px;
+    font-size: 35px;
+  }
+
+  .company-name {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-box">
+    
+    <!-- Company Logo Section -->
+    <div class="logo-section">
+      <img src="{% static 'images/TNM1.png' %}" alt="Company Logo" class="logo-image">
+         <div class="company-name">
+        The<span class="news">News</span>Market, part of 
+        <span class="epresspack">epresspack</span>
+      </div>
+      <div class="company-tagline">Employee Attendance System</div>
+    </div>
+
+    <!-- Messages -->
+    {% if form.errors %}
+    <div class="error-message show">
+      <strong>Login Failed!</strong> Invalid username or password. Please try again.
+    </div>
+    {% endif %}
+
+    {% if success_message %}
+    <div class="success-message show">
+      {{ success_message }}
+    </div>
+    {% endif %}
+
+    <!-- Login Form -->
+    <h2>Login</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <!-- Username Field -->
+      <div class="form-group">
+        <label for="id_username">Username or Email</label>
+        {{ form.username }}
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        {{ form.password }}
+      </div>
+
+      <!-- Login Button -->
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p class="footer-text">© 2026 TheNewsMarket, part of epresspack. All rights reserved.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

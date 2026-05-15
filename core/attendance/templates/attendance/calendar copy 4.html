@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.weekday {
+    background: #ecf0f1;
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+}
+
+.day {
+    border: 1px solid #ddd;
+    min-height: 90px;
+    padding: 5px;
+    background: white;
+    position: relative;
+}
+
+.weekend {
+    background: #f2f2f2;
+}
+
+.holiday {
+    background: #d6eaf8;
+}
+
+.leave-box {
+    margin-top: 3px;
+    position: relative;
+    background-color: var(--leave-color);
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 30px;
+    cursor: pointer;
+}
+
+.legend {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+}
+
+.legend h4 {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+.legend-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: #764ba2;
+        }
+
+.approved { background: #27ae60; }
+.pending { background: #f39c12; }
+.rejected { background: #e74c3c; }
+
+.team-tech { border-left: 4px solid #2980b9; }
+.team-dcm { border-left: 4px solid #8e44ad; }
+
+        /* Cancel Button - IMPORTANT STYLES */
+.cancel-leave-btn {
+            background: rgba(255, 255, 255, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            color: white !important;
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            padding: 0 !important;
+            cursor: pointer !important;
+            font-size: 14px !important;
+            font-weight: bold !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.2s ease !important;
+            opacity: 0 !important;
+            margin-left: 4px !important;
+            flex-shrink: 0 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+        }
+
+        /* Show cancel button on hover */
+        .leave-cell:hover .cancel-leave-btn {
+            opacity: 1 !important;
+        }
+
+        /* Cancel button hover effect */
+        .cancel-leave-btn:hover {
+            background: rgba(255, 0, 0, 0.8) !important;
+            border-color: rgba(255, 0, 0, 1) !important;
+            transform: rotate(90deg) !important;
+        }
+
+        /* Cancel button active effect */
+        .cancel-leave-btn:active {
+            transform: scale(0.9) rotate(90deg) !important;
+    }
+
+</style>
+
+<div class="calendar-header">
+<a href="?year={{ prev_year }}&month={{ prev_month }}" class="nav-btn">← Previous</a>
+<h3><div class="month-display">{{ month }} {{ year }}</div></h3>
+<a href="?year={{ next_year }}&month={{ next_month }}" class="nav-btn">Next →</a>
+</div>
+
+<div class="calendar-grid">
+    <div class="weekday">Mon</div>
+    <div class="weekday">Tue</div>
+    <div class="weekday">Wed</div>
+    <div class="weekday">Thu</div>
+    <div class="weekday">Fri</div>
+    <div class="weekday">Sat</div>
+    <div class="weekday">Sun</div>
+
+    {% for day in calendar_days %}
+        <div class="day {% if day.date.weekday >= 5 %}weekend{% endif %}">
+            <strong>{{ day.day }}</strong>
+
+            {% for leave in day.leaves %}
+                <div class="leave-box {{ leave.status }} team-{{ leave.user.profile.team|lower }}">
+                    {{ leave.user.username }} ({{ leave.get_leave_type_display }} - {{ leave.get_duration_display }})                                
+            <!-- HOVER CANCEL BUTTON -->
+            <button class="cancel-leave-btn"
+                type="button"
+                data-leave-id="{{ leave.id }}"
+                onclick="cancelLeaveFunction(event, this)"
+                title="Click to cancel this leave"
+                style="background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.5); color: white; width: 20px; height: 20px; border-radius: 50%; padding: 0; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; opacity: 0; margin-left: 4px; flex-shrink: 0;">
+                ✕
+            </button>
+                </div>
+            
+                                                
+            
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+
+    <div class="legend">
+        <h4>Legend - Leave Types:</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #27ae60;"></span>
+                <span>Approved</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #e74c3c;"></span>
+                <span>Rejected</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #f39c12;"></span>
+                <span>Pending Approval</span>
+            </div>
+
+        </div>
+    </div>
+
+
+<script>
+    // Main cancel function - FIXED VERSION
+    function cancelLeaveFunction(event, button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Get leave ID from the button's data attribute
+        const leaveId = button.getAttribute('data-leave-id');
+        
+        console.log('Cancel button clicked for leave ID:', leaveId);
+        
+        // Confirmation dialog
+        if (!confirm('Are you sure you want to cancel this leave? Days will be returned to your available balance.')) {
+            return;
+        }
+        
+        // Show loading state
+        button.disabled = true;
+        button.style.opacity = '0.5';
+        
+        // Send AJAX request
+        fetch('{% url "cancel_leave" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                leave_id: parseInt(leaveId)
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                // Show success message
+                showNotification('✓ ' + data.message, 'success');
+                
+                // Remove the leave cell from display
+                const leaveCell = button.closest('td');
+                if (leaveCell) {
+                    leaveCell.style.transition = 'all 0.3s ease';
+                    leaveCell.style.opacity = '0.5';
+                    
+                    // Reload page after animation
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    // Fallback: reload page anyway
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            } else {
+                // Show error message
+                showNotification('✗ ' + data.message, 'error');
+                button.disabled = false;
+                button.style.opacity = '1';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred: ' + error.message, 'error');
+            button.disabled = false;
+            button.style.opacity = '1';
+        });
+    }
+    
+    // Notification function
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            z-index: 9999;
+            font-weight: bold;
+            color: white;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        `;
+        
+        if (type === 'success') {
+            notification.style.backgroundColor = '#4CAF50';
+            notification.style.color = 'white';
+        } else {
+            notification.style.backgroundColor = '#f44336';
+            notification.style.color = 'white';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 4000);
+    }
+    
+    // Animation styles
+    if (!document.getElementById('cancel-leave-animations')) {
+        const style = document.createElement('style');
+        style.id = 'cancel-leave-animations';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Debug: Log all cancel buttons found
+    console.log('Cancel buttons found:', document.querySelectorAll('.cancel-leave-btn').length);
+</script>
+
+
+{% endblock %}

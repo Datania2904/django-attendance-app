@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="mb-4">
+        <h1 class="h3 mb-2">Leave Approvals</h1>
+        <p class="text-muted">Review and manage pending leave requests</p>
+    </div>
+
+    <!-- Status Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <label for="filterLeaveType" class="form-label fw-semibold">Filter by Leave Type</label>
+                    <select id="filterLeaveType" class="form-select">
+                        <option value="">All Leave Types</option>
+                        <option value="Casual">Casual Leave</option>
+                        <option value="Sick">Sick Leave</option>
+                        <option value="Earned">Earned Leave</option>
+                        <option value="Maternity">Maternity Leave</option>
+                        <option value="WFH">Work From Home</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-info mb-0" role="alert">
+                        <strong>Total Pending:</strong> <span id="pendingCount">{{ pending_count }}</span> requests
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State (hidden by default) -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+        <div class="mb-3">
+            <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+        </div>
+        <h5>All leave requests have been processed</h5>
+        <p class="text-muted">Check back later for new submissions.</p>
+    </div>
+
+    <!-- Pending Leaves Grid -->
+    <div id="leavesContainer" class="row g-3">
+        {% for leave in pending_leaves %}
+            <div class="col-md-6 col-lg-4 leave-card" data-leave-type="{{ leave.leave_type }}" data-leave-id="{{ leave.id }}">
+                <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                    <!-- Card Header -->
+                    <div class="card-header bg-light border-0 pb-3 pt-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 fw-bold">{{ leave.user.get_full_name }}</h6>
+                                <small class="text-muted">{{ leave.user.profile.team }} • {{ leave.user.profile.role }}</small>
+                            </div>
+                            <span class="badge bg-warning text-dark">{{ leave.get_leave_type_display }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="card-body">
+                        <!-- Leave Dates -->
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1">
+                                <i class="far fa-calendar"></i> Leave Period
+                            </div>
+                            <div class="fw-semibold">
+                                {{ leave.start_date|date:"M d, Y" }} - {{ leave.end_date|date:"M d, Y" }}
+                            </div>
+                            <div class="leave-detail">
+                                <strong>Duration:</strong> {{ leave.get_duration_display }}
+                            </div>
+                            <small class="text-muted">
+                                <strong>{{ leave.total_days }}</strong> day{{ leave.total_days|pluralize }}
+                            </small>
+                        </div>
+
+                        <!-- Reason -->
+                        {% if leave.reason %}
+                            <div class="mb-3">
+                                <div class="small text-muted mb-1">
+                                    <i class="fas fa-comment"></i> Reason
+                                </div>
+                                <p class="mb-0 small">{{ leave.reason }}</p>
+                            </div>
+                        {% endif %}
+
+                        <!-- Request Date -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                Requested on {{ leave.created_at|date:"M d, Y" }}
+                            </small>
+                        </div>
+
+                        <!-- Status Indicator -->
+                        <div class="alert alert-light border-start border-warning mb-0" role="alert">
+                            <small><strong>Status:</strong> <span class="status-text">Pending Review</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer with Action Buttons -->
+                    <div class="card-footer bg-light border-0 pt-3 pb-3">
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" 
+                                    class="btn btn-outline-success btn-sm approve-btn" 
+                                    data-leave-id="{{ leave.id }}"
+                                    title="Approve this leave request">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-danger btn-sm reject-btn" 
+                                    data-leave-id="{{ leave.id }}"
+                                    title="Reject this leave request">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                        <div class="loading-spinner d-none mt-2" style="text-align: center;">
+                            <small class="text-muted">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Processing...
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <!-- Empty State (when no pending leaves) -->
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">No Pending Requests</h5>
+                <p class="text-muted">All leave requests have been processed. Check back later for new submissions.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- CSS Styles -->
+<style>
+    .transition {
+        transition: all 0.3s ease;
+    }
+
+    .hover-shadow-lg:hover {
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-2px);
+    }
+
+    .leave-card {
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .card-fade-out {
+        animation: fadeOut 0.5s ease forwards;
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+    }
+
+    .btn-group .btn {
+        flex: 1;
+    }
+
+    .loading-spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+</style>
+
+<!-- JavaScript for Functionality -->
+<script>
+    // CSRF Token from Django template
+    const getCookie = (name) => {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    };
+
+    const csrftoken = getCookie('csrftoken');
+
+    // ==========================================
+    // 1. APPROVE/REJECT BUTTON HANDLERS
+    // ==========================================
+    document.querySelectorAll('.approve-btn, .reject-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const leaveId = this.getAttribute('data-leave-id');
+            const isApprove = this.classList.contains('approve-btn');
+            const action = isApprove ? 'approve' : 'reject';
+            
+            // Disable button and show loading spinner
+            const card = this.closest('.leave-card');
+            const buttons = card.querySelector('.btn-group');
+            const spinner = card.querySelector('.loading-spinner');
+            
+            // Disable all buttons
+            card.querySelectorAll('.approve-btn, .reject-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+            spinner.classList.remove('d-none');
+
+            // Send AJAX request
+            fetch('/leave/approvals/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    leave_id: parseInt(leaveId),
+                    action: action
+                })
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Success! Remove card from DOM with animation
+                    card.classList.add('card-fade-out');
+                    
+                    setTimeout(() => {
+                        card.remove();
+                        updatePendingCount();
+                        showNotification(data.message, 'success');
+                        
+                        // Check if no more cards
+                        checkEmptyState();
+                    }, 500);
+                } else {
+                    // Handle error
+                    showNotification(data.message || 'An error occurred', 'danger');
+                    enableButtons(card);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'danger');
+                enableButtons(card);
+            });
+        });
+    });
+
+    // ==========================================
+    // 2. FILTER FUNCTIONALITY
+    // ==========================================
+    document.getElementById('filterLeaveType').addEventListener('change', function() {
+        const filterValue = this.value;
+        const cards = document.querySelectorAll('.leave-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const leaveType = card.getAttribute('data-leave-type');
+            
+            if (filterValue === '' || leaveType === filterValue) {
+                card.style.display = '';
+                card.classList.add('transition');
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Show/hide empty state based on visible cards
+        if (visibleCount === 0) {
+            document.getElementById('emptyState').style.display = 'block';
+        } else {
+            document.getElementById('emptyState').style.display = 'none';
+        }
+    });
+
+    // ==========================================
+    // 3. HELPER FUNCTIONS
+    // ==========================================
+    
+    function enableButtons(card) {
+        const spinner = card.querySelector('.loading-spinner');
+        card.querySelectorAll('.approve-btn, .reject-btn').forEach(btn => {
+            btn.disabled = false;
+        });
+        spinner.classList.add('d-none');
+    }
+
+    function updatePendingCount() {
+        const count = document.querySelectorAll('.leave-card').length;
+        document.getElementById('pendingCount').textContent = count;
+
+        const visibleCards = Array.from(cards).filter(card => {
+            return card.parentElement !== null;
+        }).length;
+        document.getElementById('pendingCount').textContent = visibleCards;
+    }
+
+    function checkEmptyState() {
+        const cards = document.querySelectorAll('.leave-card');
+        const container = document.getElementById('leavesContainer');
+        
+        if (cards.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">No Pending Requests</h5>
+                    <p class="text-muted">All leave requests have been processed. Check back later for new submissions.</p>
+                </div>
+            `;
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Insert at top of container
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Initial check for empty state
+    document.addEventListener('DOMContentLoaded', checkEmptyState);
+</script>
+
+{% endblock %}

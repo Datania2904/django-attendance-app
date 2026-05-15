@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.weekday {
+    background: #ecf0f1;
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+}
+
+.day {
+    border: 1px solid #ddd;
+    min-height: 90px;
+    padding: 5px;
+    background: white;
+    position: relative;
+}
+
+.weekend {
+    background: #f2f2f2;
+}
+
+.holiday {
+    background: #d6eaf8;
+}
+
+.leave-box {
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-top: 3px;
+    color: white;
+}
+
+.legend {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+}
+
+.legend h4 {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+.legend-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: #764ba2;
+        }
+
+.approved { background: #27ae60; }
+.pending { background: #f39c12; }
+.rejected { background: #e74c3c; }
+
+.team-tech { border-left: 4px solid #2980b9; }
+.team-dcm { border-left: 4px solid #8e44ad; }
+
+</style>
+
+<div class="calendar-header">
+<a href="?year={{ prev_year }}&month={{ prev_month }}" class="nav-btn">← Previous</a>
+<h3><div class="month-display">{{ month }} {{ year }}</div></h3>
+<a href="?year={{ next_year }}&month={{ next_month }}" class="nav-btn">Next →</a>
+</div>
+
+<div class="calendar-grid">
+    <div class="weekday">Mon</div>
+    <div class="weekday">Tue</div>
+    <div class="weekday">Wed</div>
+    <div class="weekday">Thu</div>
+    <div class="weekday">Fri</div>
+    <div class="weekday">Sat</div>
+    <div class="weekday">Sun</div>
+
+    {% for day in calendar_days %}
+        <div class="day {% if day.date.weekday >= 5 %}weekend{% endif %}">
+            <strong>{{ day.day }}</strong>
+
+            {% for leave in day.leaves %}
+                <div class="leave-box {{ leave.status }} team-{{ leave.user.profile.team|lower }}">
+                    {{ leave.user.username }} ({{ leave.get_leave_type_display }})
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+
+    <div class="legend">
+        <h4>Legend - Leave Types:</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #27ae60;"></span>
+                <span>Approved</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #e74c3c;"></span>
+                <span>Rejected</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #f39c12;"></span>
+                <span>Pending Approval</span>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}
